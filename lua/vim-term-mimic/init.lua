@@ -15,8 +15,6 @@
 
 local M = { monitored_terminals = {} }
 
-local modes = require("term-insert-switch.internal").modes
-
 local default_options = {
   mappings = {}, -- list of mappings in the form {lhs, rhs} with
                  -- * lhs: a string representing a key combination to bind to in terminal
@@ -30,13 +28,13 @@ local default_options = {
 }
 
 function M.setup(custom_options)
-  local internal = require("term-insert-switch.internal")
+  local internal = require("vim-term-mimic.internal")
 
   local options = vim.tbl_deep_extend("force", default_options, custom_options)
 
   if not internal.are_custom_options_valid(options) then return end
 
-  local autocmd_group = vim.api.nvim_create_augroup("term-insert-switch-autocmds", {})
+  local autocmd_group = vim.api.nvim_create_augroup("vim-term-mimic-autocmds", {})
 
   vim.api.nvim_create_autocmd({"TermOpen"}, {
     group = autocmd_group,
@@ -55,7 +53,7 @@ function M.setup(custom_options)
         end
 
         local buf_nb = internal.get_cur_buf_nb()
-        M.monitored_terminals[buf_nb] = { mode = modes.normal }
+        M.monitored_terminals[buf_nb] = { mode = internal.modes.normal }
 
         for _, mapping in pairs(options.mappings) do
           vim.keymap.set('t', mapping[1],

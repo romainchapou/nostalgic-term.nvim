@@ -5,7 +5,7 @@ local internal = {
 local modes = internal.modes
 
 local function warn(msg)
-  vim.notify("term-insert-switch: " .. msg, vim.log.levels.WARN, { title = 'term-insert-switch' })
+  vim.notify("vim-term-mimic: " .. msg, vim.log.levels.WARN, { title = 'vim-term-mimic' })
 end
 
 -- assumes it is running from a terminal buffer
