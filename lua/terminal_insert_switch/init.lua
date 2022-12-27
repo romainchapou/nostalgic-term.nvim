@@ -1,16 +1,12 @@
 -- NOTE this will probably not behave properly if
--- * you are switching from multiple windows containing the same temrinal buffer
+-- * you are switching from multiple windows containing the same terminal buffer
 -- * switch windows using another mean than the mappings given in the setup function, including the mouse
 
 local M = { monitored_terminals = {} }
 
 local modes = { insert = 1, normal = 0 }
 
-local function is_terminal()
-  return vim.api.nvim_get_option_value("buftype", {scope = "local"}) == 'terminal'
-end
-
--- assumes is_terminal() true
+-- assumes it is running from a terminal buffer
 local function is_regular_terminal()
   return vim.api.nvim_get_option_value("ft", {scope = "local"}) == ''
 end
@@ -71,39 +67,32 @@ function M.setup(custom_options)
 
     callback = function()
       -- @Cleanup: call to is_regular_terminal() maybe useless/false
-      if is_regular_terminal() and not is_cur_window_floating() then
-        for _, mapping in pairs(options.mappings) do
-          vim.keymap.set('t', mapping[1], switch_windows_fn(mapping[2], 't'), {buffer = true})
-        end
-
-        local buf_nb = vim.api.nvim_call_function("bufnr", {})
-        M.monitored_terminals[buf_nb] = {}
+      if not (is_regular_terminal() and not is_cur_window_floating()) then
+        return
       end
-    end
-  })
 
-  -- TODO check that this works with non interactive terminals
-  vim.api.nvim_create_autocmd({"TermClose"}, {
-    group = autocmd_group,
+      for _, mapping in pairs(options.mappings) do
+        vim.keymap.set('t', mapping[1], switch_windows_fn(mapping[2], 't'), {buffer = true})
+      end
 
-    callback = function()
       local buf_nb = vim.api.nvim_call_function("bufnr", {})
-      M.monitored_terminals[buf_nb] = nil
-    end
-  })
+      M.monitored_terminals[buf_nb] = { mode = modes.normal }
 
-  vim.api.nvim_create_autocmd({"BufEnter"}, {
-    group = autocmd_group,
+      vim.api.nvim_create_autocmd({"BufDelete"}, {
+        group = autocmd_group,
+        buffer = buf_nb,
 
-    callback = function()
-      if is_terminal() and is_regular_terminal() then
-        local buf_nb = vim.api.nvim_call_function("bufnr", {})
+        callback = function()
+          M.monitored_terminals[buf_nb] = nil
+        end
+      })
 
-        -- TODO improve doc here
-        -- Not previously seen buffer => this is a new buffer, set it to normal mode
-        if not M.monitored_terminals[buf_nb] then
-          M.monitored_terminals[buf_nb].mode = modes.normal
-        else
+      vim.api.nvim_create_autocmd({"BufEnter"}, {
+        group = autocmd_group,
+        buffer = buf_nb,
+
+        callback = function()
+          -- TODO improve doc here
           if M.monitored_terminals[buf_nb].mode == modes.insert then
             vim.api.nvim_command("startinsert")
           else
@@ -122,20 +111,17 @@ function M.setup(custom_options)
 
           M.monitored_terminals[buf_nb].mode = modes.normal
         end
-      end
-    end
-  })
+      })
 
-  vim.api.nvim_create_autocmd({"BufLeave"}, {
-    group = autocmd_group,
+      vim.api.nvim_create_autocmd({"BufLeave"}, {
+        group = autocmd_group,
+        buffer = buf_nb,
 
-    callback = function()
-      local buf_nb = vim.api.nvim_call_function("bufnr", {})
-
-      if M.monitored_terminals[buf_nb] then
-        -- leaving a monitored terminal, saving the cursor postion
-        M.monitored_terminals[buf_nb].curs_pos = vim.api.nvim_win_get_cursor(0)
-      end
+        callback = function()
+          -- leaving a monitored terminal, saving the cursor postion
+          M.monitored_terminals[buf_nb].curs_pos = vim.api.nvim_win_get_cursor(0)
+        end
+      })
     end
   })
 
