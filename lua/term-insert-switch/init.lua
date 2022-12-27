@@ -19,7 +19,8 @@ local modes = require("term-insert-switch.internal").modes
 
 local default_options = {
   mappings = {},
-  add_normal_mode_mappings = false,
+  start_in_insert_mode = true, -- start new terminals in insert mode by default, as in Vim
+  add_normal_mode_mappings = false, -- if true, also add mappings in normal mode
 }
 
 function M.setup(custom_options)
@@ -41,6 +42,10 @@ function M.setup(custom_options)
       vim.schedule(function()
         if not (internal.is_regular_terminal() and not internal.is_cur_window_floating()) then
           return
+        end
+
+        if options.add_normal_mode_mappings then
+          vim.api.nvim_command("startinsert")
         end
 
         local buf_nb = vim.api.nvim_call_function("bufnr", {})
@@ -68,7 +73,6 @@ function M.setup(custom_options)
   })
 
   if options.add_normal_mode_mappings then
-    -- also add the users mapping in normal mode
     for _, mapping in pairs(options.mappings) do
       vim.keymap.set('n', mapping[1], internal.switch_windows_fn(mapping[2], 'n', M.monitored_terminals))
     end
