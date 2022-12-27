@@ -17,6 +17,10 @@ function internal.is_cur_window_floating()
   return vim.api.nvim_win_get_config(0).zindex
 end
 
+function internal.get_cur_buf_nb()
+  return vim.api.nvim_call_function("bufnr", {})
+end
+
 
 -- NOTE: this doesn't support doing ':Xwincd win_cmd', with X a number
 function internal.switch_windows_fn(win_cmd, mode, monitored_terminals, buf_nb)
@@ -30,6 +34,23 @@ function internal.switch_windows_fn(win_cmd, mode, monitored_terminals, buf_nb)
     return function()
       vim.api.nvim_command(vim.v.count .. "wincmd " .. win_cmd)
     end
+  end
+end
+
+function internal.vim_terminal_ctrl_w_fn(monitored_terminals, buf_nb)
+  return function()
+    monitored_terminals[buf_nb].mode = modes.insert
+
+    vim.api.nvim_command("stopinsert")
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<c-w>", true, true, true), 'n', false)
+
+    -- go back to insert mode if we end up in the same terminal
+    vim.schedule(function()
+      local new_buf_nb = internal.get_cur_buf_nb()
+      if new_buf_nb == buf_nb then
+        vim.api.nvim_command("startinsert")
+      end
+    end)
   end
 end
 

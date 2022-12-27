@@ -18,9 +18,15 @@ local M = { monitored_terminals = {} }
 local modes = require("term-insert-switch.internal").modes
 
 local default_options = {
-  mappings = {},
+  mappings = {}, -- list of mappings in the form {lhs, rhs} with
+                 -- * lhs: a string representing a key combination to bind to in terminal
+                 --        mode, for example: '<c-h>' or '<c-n>'
+                 -- * rhs: a string representing a correct :wincd argument,
+                 --        for example: 'h' or 'gt'
   start_in_insert_mode = true, -- start new terminals in insert mode by default, as in Vim
-  add_normal_mode_mappings = false, -- if true, also add mappings in normal mode
+  add_normal_mode_mappings = false, -- if true, also add mappings in normal mode (with nore)
+  add_vim_ctrl_w = false, -- if true, add ctrl-w as a launcher of window commands also in
+                          -- the terminal, as in Vim
 }
 
 function M.setup(custom_options)
@@ -36,7 +42,7 @@ function M.setup(custom_options)
     group = autocmd_group,
 
     callback = function()
-      -- Using vim.schedule here so custom terminals (meaning termina buffers
+      -- Using vim.schedule here so custom terminals (meaning terminal buffers
       -- used in plugins) can have the time to set their 'filetype' option and
       -- be identified by is_regular_terminal.
       vim.schedule(function()
@@ -44,16 +50,21 @@ function M.setup(custom_options)
           return
         end
 
-        if options.add_normal_mode_mappings then
+        if options.start_in_insert_mode then
           vim.api.nvim_command("startinsert")
         end
 
-        local buf_nb = vim.api.nvim_call_function("bufnr", {})
+        local buf_nb = internal.get_cur_buf_nb()
         M.monitored_terminals[buf_nb] = { mode = modes.normal }
 
         for _, mapping in pairs(options.mappings) do
           vim.keymap.set('t', mapping[1],
                          internal.switch_windows_fn(mapping[2], 't', M.monitored_terminals, buf_nb),
+                         {buffer = true})
+        end
+
+        if options.add_vim_ctrl_w then
+          vim.keymap.set('t', '<c-w>', internal.vim_terminal_ctrl_w_fn(M.monitored_terminals, buf_nb),
                          {buffer = true})
         end
 
