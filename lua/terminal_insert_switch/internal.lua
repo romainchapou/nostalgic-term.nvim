@@ -10,7 +10,7 @@ end
 
 -- assumes it is running from a terminal buffer
 function internal.is_regular_terminal()
-  return vim.api.nvim_get_option_value("ft", {scope = "local"}) == ''
+  return vim.api.nvim_get_option_value("filetype", {scope = "local"}) == ''
 end
 
 function internal.is_cur_window_floating()
