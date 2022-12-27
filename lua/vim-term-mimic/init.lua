@@ -19,7 +19,7 @@ local default_options = {
   mappings = {}, -- list of mappings in the form {lhs, rhs} with
                  -- * lhs: a string representing a key combination to bind to in terminal
                  --        mode, for example: '<c-h>' or '<c-n>'
-                 -- * rhs: a string representing a correct :wincd argument,
+                 -- * rhs: a string representing a correct :wincmd argument,
                  --        for example: 'h' or 'gt'
   start_in_insert_mode = true, -- start new terminals in insert mode by default, as in Vim
   add_normal_mode_mappings = false, -- if true, also add mappings in normal mode (with nore)
