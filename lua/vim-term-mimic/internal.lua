@@ -32,7 +32,12 @@ function internal.switch_windows_fn(win_cmd, mode, monitored_terminals, buf_nb)
     end
   elseif mode == 'n' then
     return function()
-      vim.api.nvim_command(vim.v.count .. "wincmd " .. win_cmd)
+      if vim.v.count ~= 0 then
+        vim.api.nvim_command(vim.v.count .. "wincmd " .. win_cmd)
+      else
+        -- some wincmd commands are unpredictable if given a count of 0
+        vim.api.nvim_command("wincmd " .. win_cmd)
+      end
     end
   end
 end
