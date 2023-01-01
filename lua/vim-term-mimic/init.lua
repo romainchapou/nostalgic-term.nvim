@@ -3,15 +3,10 @@
 -- for terminal buffers).
 --
 -- For every opened terminal buffer, we store in this table the mode (normal or
--- insert) it should be in **when we switch back to it**. When leaving the
--- terminal buffer from one of the user defined terminal mode mapping, we set
--- the mode to switch back to to insert. When entering the terminal buffer, we
--- apply the correct mode according to the table and set the mode to normal (as
--- if the user goes to normal mode before leaving the terminal, we want to
--- switch to normal mode when the user gets back to this terminal). We also
--- store the cursor position to deal with edge cases.
---
--- See the README for the limitations.
+-- insert) it should be in when we switch back to it. This is done by using
+-- auto commands and being careful about the timing of the operations. We also
+-- store the cursor position for terminals in normal mode to deal with edge
+-- cases.
 
 local M = { monitored_terminals = {} }
 
@@ -32,7 +27,7 @@ function M.setup(custom_options)
 
   local options = vim.tbl_deep_extend("force", default_options, custom_options)
 
-  if not internal.are_custom_options_valid(options) then return end
+  local mappings_are_valid = internal.are_custom_mappings_valid(options)
 
   local autocmd_group = vim.api.nvim_create_augroup("vim-term-mimic-autocmds", {})
 
@@ -45,26 +40,28 @@ function M.setup(custom_options)
       -- be identified by is_regular_terminal.
       vim.schedule(function()
         if not (internal.is_regular_terminal() and not internal.is_cur_window_floating()) then
+          -- Avoid the application of our mappings and mode saving for terminal
+          -- buffers used by plugins
           return
         end
+
+        local buf_nb = vim.api.nvim_get_current_buf()
 
         if options.start_in_insert_mode then
           vim.api.nvim_command("startinsert")
         end
 
-        local buf_nb = internal.get_cur_buf_nb()
-        M.monitored_terminals[buf_nb] = { mode = internal.modes.normal }
-
-        for _, mapping in pairs(options.mappings) do
-          vim.keymap.set('t', mapping[1],
-                         internal.switch_windows_fn(mapping[2], 't', M.monitored_terminals, buf_nb),
-                         {buffer = true})
+        if mappings_are_valid then
+          for _, mapping in pairs(options.mappings) do
+            vim.keymap.set('t', mapping[1], internal.switch_windows_fn(mapping[2]), {buffer = true})
+          end
         end
 
         if options.add_vim_ctrl_w then
-          vim.keymap.set('t', '<c-w>', internal.vim_terminal_ctrl_w_fn(M.monitored_terminals, buf_nb),
-                         {buffer = true})
+          vim.keymap.set('t', '<c-w>', internal.vim_terminal_ctrl_w_fn(buf_nb), {buffer = true})
         end
+
+        M.monitored_terminals[buf_nb] = { mode = internal.modes.normal, curs_pos_valid = true }
 
         local function register_buffer_autocmd(autocmd_event, callback)
           vim.api.nvim_create_autocmd({autocmd_event}, {
@@ -74,16 +71,18 @@ function M.setup(custom_options)
           })
         end
 
-        register_buffer_autocmd("BufEnter", internal.switch_to_correct_mode_and_update)
+        register_buffer_autocmd("TermEnter", internal.set_buf_state_to_insert)
+        register_buffer_autocmd("TermLeave", internal.set_buf_state_to_normal)
+        register_buffer_autocmd("BufEnter", internal.switch_to_correct_mode)
         register_buffer_autocmd("BufLeave", internal.save_cursor_position)
         register_buffer_autocmd("BufDelete", internal.remove_from_monitored_terminals)
       end)
     end
   })
 
-  if options.add_normal_mode_mappings then
+  if options.add_normal_mode_mappings and mappings_are_valid then
     for _, mapping in pairs(options.mappings) do
-      vim.keymap.set('n', mapping[1], internal.switch_windows_fn(mapping[2], 'n', M.monitored_terminals))
+      vim.keymap.set('n', mapping[1], internal.switch_windows_fn(mapping[2]))
     end
   end
 end
