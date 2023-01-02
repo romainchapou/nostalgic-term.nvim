@@ -61,7 +61,13 @@ function M.setup(custom_options)
           vim.keymap.set('t', '<c-w>', internal.vim_terminal_ctrl_w_fn(buf_nb), {buffer = true})
         end
 
-        M.monitored_terminals[buf_nb] = { mode = internal.modes.normal, curs_pos_valid = true }
+        M.monitored_terminals[buf_nb] = { curs_pos_valid = true }
+
+        if vim.api.nvim_get_current_buf() == buf_nb and vim.api.nvim_get_mode().mode ~= 'nt' then
+          M.monitored_terminals[buf_nb].mode = internal.modes.insert
+        else
+          M.monitored_terminals[buf_nb].mode = internal.modes.normal
+        end
 
         local function register_buffer_autocmd(autocmd_event, callback)
           vim.api.nvim_create_autocmd({autocmd_event}, {

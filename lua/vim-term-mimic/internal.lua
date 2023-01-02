@@ -1,3 +1,5 @@
+-- TODO bug if switching confiture term buffer from fzf lua -> BufUnload rather than delete ?
+
 local internal = {
   modes = { insert = 1, normal = 0 }
 }
