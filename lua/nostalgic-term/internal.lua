@@ -1,5 +1,3 @@
--- TODO bug if switching confiture term buffer from fzf lua -> BufUnload rather than delete ?
-
 local internal = {
   modes = { insert = 1, normal = 0 }
 }
@@ -7,7 +5,7 @@ local internal = {
 local modes = internal.modes
 
 local function warn(msg)
-  vim.notify("vim-term-mimic: " .. msg, vim.log.levels.WARN, { title = 'vim-term-mimic' })
+  vim.notify("nostalgic-term: " .. msg, vim.log.levels.WARN, { title = 'nostalgic-term' })
 end
 
 -- assumes it is running from a terminal buffer

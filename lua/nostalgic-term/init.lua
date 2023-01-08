@@ -23,13 +23,13 @@ local default_options = {
 }
 
 function M.setup(custom_options)
-  local internal = require("vim-term-mimic.internal")
+  local internal = require("nostalgic-term.internal")
 
   local options = vim.tbl_deep_extend("force", default_options, custom_options)
 
   local mappings_are_valid = internal.are_custom_mappings_valid(options)
 
-  local autocmd_group = vim.api.nvim_create_augroup("vim-term-mimic-autocmds", {})
+  local autocmd_group = vim.api.nvim_create_augroup("nostalgic-term-autocmds", {})
 
   vim.api.nvim_create_autocmd({"TermOpen"}, {
     group = autocmd_group,
@@ -81,7 +81,7 @@ function M.setup(custom_options)
         register_buffer_autocmd("TermLeave", internal.set_buf_state_to_normal)
         register_buffer_autocmd("BufEnter", internal.switch_to_correct_mode)
         register_buffer_autocmd("BufLeave", internal.save_cursor_position)
-        register_buffer_autocmd("BufDelete", internal.remove_from_monitored_terminals)
+        register_buffer_autocmd("BufUnload", internal.remove_from_monitored_terminals)
       end)
     end
   })
