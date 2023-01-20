@@ -64,6 +64,9 @@ require('nostalgic-term').setup({
   add_normal_mode_mappings = false, -- if true, also add mappings in normal mode (with nore)
   add_vim_ctrl_w = false, -- if true, add ctrl-w as a launcher of window commands also in
                           -- the terminal, as in Vim
+  enabled_filetypes = {}, -- a list of the filetypes for custom terminal buffers where mode
+                          -- saving and mappings should be applied. This is useful for
+                          -- compatibility with other terminal plugins, see the README.
 })
 ```
 
@@ -80,6 +83,36 @@ require('nostalgic-term').setup({
   add_normal_mode_mappings = true,
 })
 ```
+
+## Compatibility with other plugins
+
+To use nostalgic-term in conjunction with a plugin such as [toggleterm.nvim](https://github.com/akinsho/toggleterm.nvim) that provides a custom terminal, you should add that plugin's terminal buffer filetype to the `enabled_filetypes` option. There may also be some settings to use in the other plugin.
+
+
+### For [toggleterm.nvim](https://github.com/akinsho/toggleterm.nvim)
+
+Add `"toggleterm"` to nostalgic-term's `enabled_filetypes` option (lua):
+
+```lua
+require('nostalgic-term').setup{
+  -- ... your other settings ...
+  enabled_filetypes = {"toggleterm"},
+}
+```
+
+You should then set toggleterm's `start_in_insert` option to false to let nostalgic-term handle the insert/normal mode switch (lua):
+
+```lua
+require('toggleterm').setup{
+  -- ... your other settings ...
+  start_in_insert = false,
+}
+```
+
+
+### For other plugins
+
+If the plugin isn't directly compatible with nostalgic-term, find the plugin's filetype (using for example `:set ft?` in the terminal buffer) and add it to the `enabled_filetypes` option. If you still have some problems, you can create an issue in this repo.
 
 
 ## Known limitations

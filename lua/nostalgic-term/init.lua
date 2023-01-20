@@ -20,10 +20,15 @@ local default_options = {
   add_normal_mode_mappings = false, -- if true, also add mappings in normal mode (with nore)
   add_vim_ctrl_w = false, -- if true, add ctrl-w as a launcher of window commands also in
                           -- the terminal, as in Vim
+  enabled_filetypes = {}, -- a list of the filetypes for custom terminal buffers where mode
+                          -- saving and mappings should be applied. This is useful for
+                          -- compatibility with other terminal plugins, see the README.
 }
 
 function M.setup(custom_options)
   local internal = require("nostalgic-term.internal")
+
+  if custom_options == nil then custom_options = {} end
 
   local options = vim.tbl_deep_extend("force", default_options, custom_options)
 
@@ -37,9 +42,9 @@ function M.setup(custom_options)
     callback = function()
       -- Using vim.schedule here so custom terminals (meaning terminal buffers
       -- used in plugins) can have the time to set their 'filetype' option and
-      -- be identified by is_regular_terminal.
+      -- be identified by is_supported_terminal.
       vim.schedule(function()
-        if not (internal.is_regular_terminal() and not internal.is_cur_window_floating()) then
+        if not internal.is_supported_terminal(options.enabled_filetypes) then
           -- Avoid the application of our mappings and mode saving for terminal
           -- buffers used by plugins
           return

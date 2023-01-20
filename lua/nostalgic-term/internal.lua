@@ -9,12 +9,16 @@ local function warn(msg)
 end
 
 -- assumes it is running from a terminal buffer
-function internal.is_regular_terminal()
-  return vim.api.nvim_get_option_value("filetype", {scope = "local"}) == ''
-end
+function internal.is_supported_terminal(enabled_filetypes)
+  local buf_ft = vim.api.nvim_get_option_value("filetype", {scope = "local"})
 
-function internal.is_cur_window_floating()
-  return vim.api.nvim_win_get_config(0).zindex
+  for _, enabled_ft in ipairs(enabled_filetypes) do
+    if buf_ft == enabled_ft then
+      return true
+    end
+  end
+
+  return buf_ft == ""
 end
 
 local function get_current_buf_nb()
