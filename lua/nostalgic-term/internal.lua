@@ -9,8 +9,8 @@ local function warn(msg)
 end
 
 -- assumes it is running from a terminal buffer
-function internal.is_supported_terminal(enabled_filetypes)
-  local buf_ft = vim.api.nvim_get_option_value("filetype", {scope = "local"})
+function internal.is_supported_terminal(buf_nb, enabled_filetypes)
+  local buf_ft = vim.fn.getbufvar(buf_nb, "&filetype")
 
   for _, enabled_ft in ipairs(enabled_filetypes) do
     if buf_ft == enabled_ft then

@@ -40,35 +40,35 @@ function M.setup(custom_options)
     group = autocmd_group,
 
     callback = function()
+      local buf_nb = vim.api.nvim_get_current_buf()
+
       -- Using vim.schedule here so custom terminals (meaning terminal buffers
       -- used in plugins) can have the time to set their 'filetype' option and
       -- be identified by is_supported_terminal.
       vim.schedule(function()
-        if not internal.is_supported_terminal(options.enabled_filetypes) then
+        if not internal.is_supported_terminal(buf_nb, options.enabled_filetypes) then
           -- Avoid the application of our mappings and mode saving for terminal
           -- buffers used by plugins
           return
         end
 
-        local buf_nb = vim.api.nvim_get_current_buf()
-
-        if options.start_in_insert_mode then
-          vim.api.nvim_command("startinsert")
-        end
-
         if mappings_are_valid then
           for _, mapping in pairs(options.mappings) do
-            vim.keymap.set('t', mapping[1], internal.switch_windows_fn(mapping[2]), {buffer = true})
+            vim.keymap.set('t', mapping[1], internal.switch_windows_fn(mapping[2]), {buffer = buf_nb})
           end
         end
 
         if options.add_vim_ctrl_w then
-          vim.keymap.set('t', '<c-w>', internal.vim_terminal_ctrl_w_fn(buf_nb), {buffer = true})
+          vim.keymap.set('t', '<c-w>', internal.vim_terminal_ctrl_w_fn(buf_nb), {buffer = buf_nb})
         end
 
         M.monitored_terminals[buf_nb] = { curs_pos_valid = true }
 
-        if vim.api.nvim_get_current_buf() == buf_nb and vim.api.nvim_get_mode().mode ~= 'nt' then
+        if options.start_in_insert_mode then
+          if buf_nb == vim.api.nvim_get_current_buf() then
+            vim.api.nvim_command("startinsert")
+          end
+
           M.monitored_terminals[buf_nb].mode = internal.modes.insert
         else
           M.monitored_terminals[buf_nb].mode = internal.modes.normal
